@@ -1,0 +1,180 @@
+---
+title: "Bioinformatics Class 7"
+author: "Corrina Elder"
+date: "April 25, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Functions again
+
+We can source any file of R code with the `source`() function
+
+```{r}
+source("http://tinyurl.com/rescale-R")
+```
+
+Let's make sure things are here
+
+```{r}
+ls()
+```
+
+Check our `rescale()` is working
+
+```{r}
+rescale(1:10)
+```
+
+```{r, eval = FALSE}
+rescale( c(1:10, "string"))
+```
+
+Let's check if `rescale2()` does any better
+
+```{r, eval = FALSE}
+rescale2( c(1:10, "string"))
+```
+
+
+## Function for finding missing values in two datasets
+
+Write a `both_na()` function to do this...
+
+```{r}
+x <- c( 1, 2, NA, 3, NA) 
+y <- c(NA,3,NA,3, 4)
+
+sum(is.na(x))
+```
+
+```{r}
+x <- c( 1, 2, NA, 3, NA) 
+y <- c(NA,3,NA,3, 4)
+
+which(is.na(x))
+```
+
+```{r}
+x <- c( 1, 2, NA, 3, NA) 
+y <- c(NA,3,NA,3, 4)
+
+which(!is.na(x))
+```
+
+```{r}
+sum(is.na(x) & is.na(y))
+```
+
+My first function can start from this snippet
+
+```{r}
+both_na <- function(x, y) {
+  sum( is.na(x) & is.na(y))
+}
+```
+
+Test it!
+
+```{r}
+both_na(x, y)
+```
+
+Testing
+
+```{r}
+ x <-  c(NA, NA, NA)
+y1 <- c( 1, NA, NA)
+y2 <- c( 1, NA, NA, NA)
+
+both_na(x, y2)
+```
+
+
+```{r}
+# x <-  c(NA, NA, NA)
+#y1 <- c( 1, NA, NA)
+#y2 <- c( 1, NA, NA, NA)
+
+#both_na2(x, y2)
+```
+
+```{r}
+x <- c( 1, 2, NA, 3, NA) 
+y <- c(NA,3,NA,3, 4)
+
+ans <- both_na3(x, y)
+```
+
+```{r}
+ans$which
+```
+
+## And a last function that is useful
+
+```{r}
+x <- df1$IDs
+y <- df2$IDs
+
+x
+y
+
+intersect(x, y)
+x %in% y        #for each element in x, check if it's in y
+x[x %in% y] 
+y[y %in% x]
+
+cbind( x[ x %in% y ], y[ y %in% x ] ) #column bind into matrix
+```
+
+Make this into a function
+
+```{r}
+gene_intersect <- function(x, y) {
+   cbind( x[ x %in% y ], y[ y %in% x ] )
+}
+
+x <- df1$IDs
+y <- df2$IDs
+gene_intersect(x, y)
+```
+
+Let's try with data.frome input rather than vectors
+
+```{r}
+gene_intersect2(df1, df2)
+```
+
+```{r}
+gene_intersect3(df1, df2)
+```
+
+```{r}
+gene_intersect4(df1, df2)
+```
+
+```{r}
+merge(df1, df2, by="IDs")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

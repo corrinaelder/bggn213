@@ -1,0 +1,189 @@
+---
+title: "Lecture 6 Hw Extra"
+author: "Corrina Elder"
+date: "April 25, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Given Code
+```{r}
+# Can you improve this analysis code?
+library(bio3d)
+s1 <- read.pdb("4AKE") # kinase with drug
+s2 <- read.pdb("1AKE") # kinase no drug
+s3 <- read.pdb("1E4Y") # kinase with drug
+
+s1.chainA <- trim.pdb(s1, chain = "A", elety = "CA")
+s2.chainA <- trim.pdb(s2, chain = "A", elety = "CA")
+s3.chainA <- trim.pdb(s3, chain = "A", elety = "CA")
+
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+
+plotb3(s1.b, sse = s1.chainA, typ = "l", ylab = "Bfactor")
+plotb3(s2.b, sse = s2.chainA, typ = "l", ylab = "Bfactor")
+plotb3(s3.b, sse = s3.chainA, typ = "l", ylab = "Bfactor")
+```
+
+## Q6:How would you generalize the original code above to work with any set of input protein structures?
+
+# What lines of code get repeated for each?
+
+```{r}
+s1 <- read.pdb("4AKE") # kinase with drug
+
+s1.chainA <- trim.pdb(s1, chain = "A", elety = "CA")
+
+s1.b <- s1.chainA$atom$b
+s1.chainA$atom
+
+plotb3(s1.b, sse = s1.chainA, typ = "l", ylab = "Bfactor")
+```
+
+
+#This function, protein_drug_plot, is used to visualize protein drug interactions from PDB data
+
+# The inputs are a PDB file (the name as a string), the chain of interest (as a letter), the element type (such as carbon, noted as "CA"), and a column of data (argument "factor") taken from atoms of the specified element type. The function assesses the inputs by reading the file, selecting a chain, selecting a set of data (then a subset of data) from the chain based on a specific atom (and then a specific factor), and plotting the resulting values.
+
+#The output is a line plot with an x-axis of "Residue" and a y-axis of the specified factor. 
+
+
+```{r}
+protein_drug_plot <- function(file, chain, elmnt, fctr) {
+  s1 <- read.pdb(file)
+
+  s1.chain <- trim.pdb(s1, chain = chain, elety = elmnt)
+  
+  atom_df <- s1.chain$atom
+  
+  s1.fctr <- atom_df[, fctr] 
+  #the "$" syntax cannot take a variable, so s1.fctr takes in all the atom    information and selects an entire column based on the factor input
+
+  plotb3(s1.fctr, sse = s1.chain, typ = "l", ylab = paste(toupper(fctr), "factor", sep = ""))
+}
+```
+
+    
+#This function takes in four lists: files, chains, elements, and factors whose orders should match respectively with the order of the files. The function iterates through the lists, taking the first item of each list to gather values for the first plot, then the second items, and so on. It creates the first plot then adds any additional plots to the existing plot.    
+```{r}
+prot_drug_plot2 <- function(file, chain, elmnt, fctr) {
+  
+  plot_colors <- c("cyan", "orange", "magenta")
+  
+  for (i in 1:length(file)) {
+  s1 <- read.pdb(file[i])
+
+  s1.chain <- trim.pdb(s1, chain = chain[i], elety = elmnt[i])
+  
+  atom_df <- s1.chain$atom
+  
+  s1.fctr <- atom_df[, fctr[i]] 
+  #the "$" syntax cannot take a variable, so s1.fctr takes in all the atom information and selects an entire column based on the factor input
+  if (i == 1) {
+    plotb3(s1.fctr, sse = s1.chain, typ = "l", ylab = paste(toupper(fctr), "factor", sep = ""), col = plot_colors[i])
+  } else {
+    lines(s1.fctr, col = plot_colors[i])
+  }
+  }
+  
+}
+```
+
+#Define the input lists and create the plot
+```{r}
+files <- c("4AKE", "1AKE", "1E4Y")
+chains <- c("A", "A", "A")
+elements <- c("CA", "CA", "CA")
+factors <- c("b", "b", "b")
+
+prot_drug_plot2(files, chains, elements, factors)
+```
+
+#This function, prot_drug_plot, is used to visualize protein drug interactions from PDB data.
+
+#prot_drug_plot takes in a vector of PDB files as well as parameters to analyze each file (a chain, an element, and a factor, each as a string). The function iterates through the files vector, taking the first item and applying the parameters, then the second, and so on. It creates the first plot then adds any additional plots to the existing plot. 
+
+#The output is one plot (Residues on the x-axis, specified factor on the y-axis) with a differently colored line for each file input.
+
+#The list of colors could be changed/extended/randomized to accomodate more than three unique lines on the plot. If I had more time, I would like to add a legend to show which color is which file.
+
+```{r}
+prot_drug_plot3 <- function(file, chain, elmnt, fctr) {
+  
+  #allows our data to be different colors in the graph
+  plot_colors <- c("cyan", "orange", "magenta")
+  
+  
+  #to iterate through every value of the file vector
+  for (i in 1:length(file)) {
+  s1 <- read.pdb(file[i])
+
+  s1.chain <- trim.pdb(s1, chain = chain, elety = elmnt)
+  
+  atom_df <- s1.chain$atom
+  
+  s1.fctr <- atom_df[, fctr] 
+  #the "$" syntax cannot take a variable, so s1.fctr takes in all the atom information and selects an entire column based on the factor input
+  
+  #creates the first plot
+  if (i == 1) {
+    plotb3(s1.fctr, sse = s1.chain, typ = "l", ylab = paste(toupper(fctr), "factor", sep = ""), col = plot_colors[i])
+    
+    #adds additional plots to first plot
+  } else {
+    lines(s1.fctr, col = plot_colors[i])
+  }
+  }
+  
+  legend("topright", title="PDB File Name", file, fill = plot_colors, horiz=TRUE, cex = 0.5, inset = c(0.03, 0.06))
+}
+```
+
+#Adding a legend?
+par(mar = c(8.1, 7.1, 0.5, 0.5))
+legend("bottomleft", title="PDB File Name",
+  	file, fill=plot_colors, horiz=FALSE)
+
+Test the function with three files and the parameters chain A, carbon, and factor b.
+
+    
+```{r}
+files <- c("4AKE", "1AKE", "1E4Y")
+chains <- "A"
+elements <- "CA"
+factors <- "b"
+
+prot_drug_plot3(files, chains, elements, factors)
+```
+    
+
+
+```{r}
+protein_drug_plot("4AKE", "A", "CA", "b")
+#lines(protein_drug_plot("1AKE", "A", "CA", "b"))
+```
+
+#The second function, join_plots, can take in three plots created from the first function and display them in one plot.
+```{r}
+join_plots <- function(s1.factor1, s1.factor2, s1.factor3) {
+  plotb3(s1.factor1, col = "cyan")
+  #lines(s1.factor2, col = "orange")
+  #lines(s1.factor3, col = "magenta")
+}
+```
+
+```{r}
+#plot1 <- protein_drug_plot("4AKE", "A", "CA", "b")
+#plot2 <- protein_drug_plot("1AKE", "A", "CA", "b")
+#plot3 <- protein_drug_plot("1E4Y", "A", "CA", "b")
+
+#join_plots(s1.fct, plot2, plot3)
+```
