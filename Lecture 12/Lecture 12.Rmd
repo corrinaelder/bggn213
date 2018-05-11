@@ -1,0 +1,60 @@
+---
+title: "Lecture 12"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Set-up HIV-Pr for docking study
+
+Get the protein first (i.e. download)
+```{r}
+library(bio3d)
+file.name <- get.pdb("1hsg")
+```
+
+Read this file in and trim out the protein and small molecule ligand from everything else
+
+```{r}
+hiv <- read.pdb(file.name)
+hiv
+```
+
+
+```{r}
+ligand <- trim.pdb(hiv, "ligand")
+ligand
+```
+
+Extract protein
+
+```{r}
+protein <- trim.pdb(hiv, "protein")
+protein
+```
+
+
+```{r}
+write.pdb(ligand, "1hsg_ligand.pdb")
+write.pdb(protein, "1hsg_protein.pdb")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
