@@ -48,6 +48,10 @@ res <- read.pdb("all.pdbqt", multi = TRUE)
 write.pdb(res, "results.pdb")
 ```
 
+```{r}
+ori <- read.pdb("ligand.pdbqt")
+rmsd(ori, res)
+```
 
 
 
