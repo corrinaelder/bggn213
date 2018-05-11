@@ -42,6 +42,11 @@ write.pdb(protein, "1hsg_protein.pdb")
 ```
 
 
+```{r}
+library(bio3d)
+res <- read.pdb("all.pdbqt", multi = TRUE)
+write.pdb(res, "results.pdb")
+```
 
 
 
