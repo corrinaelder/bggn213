@@ -1,0 +1,63 @@
+---
+title: "Lecture 13"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## 1000 Genome Project Data
+
+# Q5: What proportion of the Mexican Ancestry in LA sample population (MXL) are homozygous for the asthma associated SNP (G/G)?
+
+```{r}
+genotype <- read.csv("Sample_Genotypes.csv")
+```
+
+```{r}
+table(genotype[,2]) / nrow(genotype) * 100
+```
+
+14%
+
+
+## Base quality scores from fastqsanger
+
+```{r}
+library(seqinr)
+library(gtools)
+phred <- asc( s2c("DDDDCDEDCDDDDBBDDDCC@") ) - 33
+phred
+```
+
+```{r}
+geno <- read.table("rs8067378_ENSG00000172057.6.txt")
+```
+
+```{r}
+summary(geno)
+```
+
+```{r}
+summary(geno$exp[geno$geno == "G/G"])
+summary(geno$exp[geno$geno == "A/G"])
+summary(geno$exp[geno$geno == "A/A"])
+```
+
+```{r}
+boxplot(exp ~ geno, data = geno, notch = TRUE)
+```
+
+
+
+```{r}
+library(ggplot2)
+ggplot(geno, aes(geno, exp)) + geom_boxplot()
+```
+
+The SNP does affect expression!
+
+
+
+
+
