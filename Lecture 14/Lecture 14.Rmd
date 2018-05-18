@@ -1,0 +1,281 @@
+---
+title: "Lecture 14"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Transcriptomics and the analysis of RNA-Seq data
+
+Input our count matrix and meta-data matrix about our experiment set-up
+
+```{r}
+counts <- read.csv("data/airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <-  read.csv("data/airway_metadata.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+colnames(counts)[-1] == metadata$id
+
+ 
+```
+
+Mean values for gene expression
+
+```{r}
+control <- metadata[metadata[,"dex"] == "control",]
+control.mean <- rowSums( counts[ ,control$id] )/nrow(control) 
+names(control.mean) <- counts$ensgene
+```
+
+Now calculate the mean countrs for each gene across all drug treated experiments
+```{r}
+treated <- metadata[metadata[,"dex"] == "treated",]
+treated.mean <- rowSums( counts[ ,treated$id] )/nrow(treated) 
+names(treated.mean) <- counts$ensgene
+```
+
+Combine into a new data.frame called 'meancounts'
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+head(meancounts)
+```
+
+```{r}
+colSums(meancounts)
+```
+
+Plot our mean countrs data for control vs treated
+
+```{r}
+plot(meancounts$control, meancounts$treated, xlab = "Control", ylab = "Treated")
+```
+
+Plot with log axis
+
+```{r}
+plot(meancounts$control, meancounts$treated, xlab = "Control", ylab = "Treated", log = "xy")
+```
+
+```{r}
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+```
+
+Remove the zero-count-containing genes
+```{r}
+zero.vals <- which(meancounts[,1:2]==0, arr.ind=TRUE)
+
+to.rm <- unique(zero.vals[,1])
+mycounts <- meancounts[-to.rm,]
+head(mycounts)
+```
+
+```{r}
+up.ind <- mycounts$log2fc > 2
+down.ind <- mycounts$log2fc < (-2)
+```
+
+```{r}
+paste("Up:", sum(up.ind))
+paste("Down:", sum(down.ind))
+```
+
+## Adding annotation data
+
+```{r}
+anno <- read.csv("data/annotables_grch38.csv")
+head(anno)
+```
+
+```{r}
+results <- merge(mycounts, anno, by.x = "row.names", by.y = "ensgene")
+head(results)
+```
+
+```{r}
+library(org.Hs.eg.db)
+library(DESeq2)
+columns(org.Hs.eg.db)
+```
+
+```{r}
+mycounts$symbol <- mapIds(org.Hs.eg.db,
+                     keys=row.names(mycounts),
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+head(mycounts)
+```
+```{r}
+#mycounts$entrez <- mapIds(org.Hs.eg.db,
+#                     keys=row.names(mycounts),
+ #                    column="ENTREZ",
+  #                   keytype="ENSEMBL",
+   #                  multiVals="first")
+```
+
+```{r}
+#mycounts$uniprot <- mapIds(org.Hs.eg.db,
+    #                 keys=row.names(mycounts),
+     #                column="UNIPROT",
+      #               keytype="ENSEMBL",
+       #              multiVals="first")
+```
+
+
+
+Set up our DESeq Data Set
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = counts, 
+                              colData = metadata, 
+                              design =~ dex, 
+                              tidy = TRUE)
+dds
+```
+
+```{r}
+sizeFactors(dds)
+dispersions(dds)
+#results(dds)
+
+```
+
+```{r}
+dds <- DESeq(dds)
+```
+
+```{r}
+res <- results(dds)
+res
+```
+
+```{r}
+summary(res)
+```
+
+Order our results by p-value
+```{r}
+resOrdered <- res[order(res$pvalue),]
+head(resOrdered)
+```
+
+```{r}
+res05 <- results(dds, alpha=0.05)
+summary(res05)
+```
+
+```{r}
+resSig05 <- subset(as.data.frame(res), padj < 0.05)
+nrow(resSig05)
+```
+
+```{r}
+resSig01 <- subset(as.data.frame(res), padj < 0.01)
+nrow(resSig01)
+```
+
+Add annotation
+```{r}
+resSig01$symbol <- mapIds(org.Hs.eg.db,
+                     keys=row.names(resSig01),
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+head(resSig01)
+```
+
+```{r}
+ord <- order( resSig01$padj )
+#View(res01[ord,])
+head(resSig01[ord,])
+```
+
+```{r}
+write.csv(resSig01[ord,], "signif01_results.csv")
+```
+
+## Data Visualization
+
+Plotting counts
+
+```{r}
+i <- grep("CRISPLD2", resSig01$symbol)
+resSig01[i,]
+```
+
+```{r}
+rownames(resSig01[i,])
+```
+
+```{r}
+plotCounts(dds, gene="ENSG00000103196", intgroup="dex")
+```
+
+```{r}
+d <- plotCounts(dds, gene="ENSG00000103196", intgroup="dex", returnData=TRUE)
+head(d)
+```
+
+```{r}
+boxplot(count ~ dex , data=d)
+```
+
+```{r}
+library(ggplot2)
+ggplot(d, aes(dex, count)) + geom_boxplot(aes(fill=dex)) + scale_y_log10() + ggtitle("CRISPLD2")
+
+```
+
+```{r}
+res$sig <- res$padj < 0.05
+
+# How many of each?
+table(res$sig)
+```
+
+```{r}
+sum(is.na(res$sig))
+```
+
+```{r}
+plotMA(res, ylim = c(-2,2))
+```
+
+```{r}
+resLFC <- lfcShrink(dds, coef = 2)
+resLFC
+```
+
+```{r}
+plotMA(resLFC, ylim = c(-2,2))
+```
+
+```{r}
+ggplot(as.data.frame(res), aes(log2FoldChange, -1*log10(pvalue), col=sig)) + 
+    geom_point() + 
+    ggtitle("Volcano plot")
+```
+
+```{r}
+vsdata <- vst(dds, blind=FALSE)
+```
+
+```{r}
+plotPCA(vsdata, intgroup="dex")
+```
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
