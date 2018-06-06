@@ -1,7 +1,6 @@
 ---
 title: "Class 8"
 author: "Corrina Elder"
-date: "April 27, 2018"
 output: 
   html_document: 
     keep_md: yes

@@ -1,7 +1,6 @@
 ---
 title: 'Lecture 6 Homework: Protein Drug Interactions'
 author: "Corrina Elder"
-date: "April 20, 2018"
 output:
   html_document: 
     keep_md: yes

@@ -1,7 +1,6 @@
 ---
 title: "Lecture 6 Hw Extra"
 author: "Corrina Elder"
-date: "April 25, 2018"
 output: 
   html_document: 
     keep_md: yes

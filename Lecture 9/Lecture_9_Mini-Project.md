@@ -1,7 +1,6 @@
 ---
 title: "Bioinformatics Lecture 9 Mini-Project"
 author: "Corrina Elder"
-date: "May 2, 2018"
 output: 
   html_document: 
     keep_md: yes

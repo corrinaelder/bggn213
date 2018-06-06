@@ -21,3 +21,217 @@ names(percent) <- row.names(p)
 percent
 ```
 
+What proportion of structures are protein?
+```{r}
+percent_protein <- sum(p$Proteins) / sum(p$Total) * 100
+percent_protein
+```
+
+
+Q2: Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+
+## Section 2: Visualizing the HIV-1 protease structure
+
+Use VMD
+
+## Section 3: Using Bio3D
+
+Load the bio3d package
+
+```{r}
+library(bio3d)
+```
+
+Read in our HIV-Pr structure
+
+```{r}
+pdb <- read.pdb("1hsg.pdb")
+pdb
+```
+
+Q6: How many amino acid residues are there in this pdb object and what are the two non-protein residues?
+
+198 amino acid residues
+2 non-protein: HOH and MK1
+
+Q7: What type of R object is pdb$atom? 
+
+Dataframe
+
+```{r}
+str(pdb$atom)
+```
+
+```{r}
+# Print a summary of the coordinate data in $xyz  
+pdb$xyz
+```
+
+```{r}
+dim(pdb$xyz)
+pdb$xyz[1, atom2xyz(1:2)]
+```
+
+```{r}
+# Select all C-alpha atoms (return their indices)  
+ca.inds <- atom.select(pdb, "calpha") 
+ca.inds
+```
+
+```{r}
+# Print details of the first few selected atoms  
+head( pdb$atom[ca.inds$atom, ] )
+
+# And selected xyz coordinates  
+head( pdb$xyz[, ca.inds$xyz] )
+```
+
+```{r}
+# Select chain A 
+a.inds <- atom.select(pdb, chain = "A") 
+ 
+# Select C-alphas of chain A 
+ca.inds <- atom.select(pdb, "calpha", chain = "A") 
+ 
+# We can combine multiple selection criteria to return their intersection 
+cab.inds <- atom.select(pdb, elety = c("CA","CB"), chain = "A", resno = 10:20)
+```
+
+Q8: Use the Bio3D write.pdb() function to write out a protein only PDB file for viewing in VMD. Also write out a second separate PDB file for the ligand with residue name MK1
+
+```{r}
+inds.ligand <- atom.select(pdb, "ligand")
+inds.protein <- atom.select(pdb, "protein")
+inds.ligand
+```
+
+Check we have what we want
+```{r}
+pdb$atom[inds.ligand$atom,]
+```
+
+```{r}
+head(pdb$atom[inds.protein$atom,])
+```
+
+```{r}
+pdb.protein <- trim.pdb(pdb, inds = inds.protein)
+pdb.ligand <- trim.pdb(pdb, inds = inds.ligand)
+pdb.ligand
+```
+
+```{r}
+write.pdb(pdb.ligand, file = "1hsg_ligand.pdb")
+
+write.pdb(pdb.protein, file = "1hsg_protein.pdb")
+```
+
+
+## Section 4: Working with multiple PDB files
+
+```{r}
+# Download some example PDB files 
+ids <- c("1TND_B","1AGR_A","1TAG_A","1GG2_A","1KJY_A","4G5Q_A")  
+files <- get.pdb(ids, split = TRUE)
+```
+
+```{r}
+
+# Extract and align the chains we are interested in  
+pdbs <- pdbaln(files, fit = TRUE)
+ 
+# Print to screen a summary of the 'pdbs' object  
+pdbs
+```
+
+
+## Section 5: Example Application on Adenylate Kinase
+
+```{r}
+aa <- get.seq("1ake_A")
+```
+
+```{r}
+# Blast or hmmer search
+b <- blast.pdb(aa)
+```
+
+```{r}
+# Plot a summary of search results
+hits <- plot(b)
+```
+
+```{r}
+head(hits$pdb.id)
+```
+
+```{r}
+# Fetch PDBs
+files <- get.pdb(hits$pdb.id, path = "pdbs", split = TRUE, gzip = TRUE)
+# Align structures
+pdbs <- pdbaln(files)
+# Vector containing PDB codes
+ids <- basename.pdb(pdbs$id)
+```
+
+```{r}
+# Draw schematic alignment
+plot(pdbs, labels = ids)
+```
+
+```{r}
+# Calculate sequence conservation
+cons <- conserv(pdbs, method="entropy22") # SSE annotations
+sse <- pdbs2sse(pdbs, ind=1, rm.gaps=FALSE)
+# Plot conservation per residue
+plotb3(cons, sse=sse, ylab="Sequence entropy")
+```
+
+```{r}
+anno <- pdb.annotate(ids) 
+print(unique(anno$source))
+```
+
+
+```{r}
+# find invariant core
+core <- core.find(pdbs)  
+```
+
+```{r}
+# superimpose all structures to core
+pdbs$xyz = pdbfit(pdbs, core) 
+# Perform PCA
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+
+pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
+```
+
+
+```{r}
+# Calculate RMSD
+rd <- rmsd(pdbs)  
+# Structure-based clustering
+hc.rd <- hclust(dist(rd)) 
+grps.rd <- cutree(hc.rd, k=3)
+
+plot(pc.xray, 1:2, col="grey50", bg=grps.rd, pch=21, cex=1)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
